@@ -194,7 +194,7 @@ export default ({ match }) => {
   };
 
   const openForumUrl = () => {
-    Nui.copyClipboard(`https://sandboxrp.gg/admin/users/${player.AccountID}/`);
+    Nui.copyClipboard(`https://pulsarfw.com/admin/users/${player.AccountID}/`);
     toast.success("Copied URL");
   };
 
