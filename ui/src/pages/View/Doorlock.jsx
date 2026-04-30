@@ -90,8 +90,6 @@ export default () => {
     const handleMessage = (event) => {
       if (event.data.type === "DOORLOCK_DOORS_SELECTED") {
         const selectedData = event.data.data;
-        console.log("Received door selection:", selectedData);
-
         setDoorlock((prev) => ({
           ...prev,
           model: selectedData.model || prev.model,

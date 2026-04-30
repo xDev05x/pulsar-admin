@@ -78,65 +78,54 @@ function RegisterCallbacks()
                 end
 
                 local char = exports['pulsar-characters']:FetchCharacterSource(data)
-
-                local p = promise.new()
                 local targetLicense = exports['pulsar-core']:GetPlayerLicense(data)
+
                 MySQL.Async.fetchAll('SELECT * FROM characters WHERE License = @license AND SID != @sid', {
                     ['@license'] = targetLicense,
                     ['@sid'] = char and char:GetData("SID") or nil
                 }, function(results)
-                    if results and #results > 0 then
-                        p:resolve(results)
-                    else
-                        p:resolve({})
-                    end
-                end)
+                    local chars = results or {}
 
-                local chars = Citizen.Await(p)
-
-                for i, char in ipairs(chars) do
-                    if char.Jobs then
-                        local success, parsed = pcall(json.decode, char.Jobs)
-                        if success then
-                            chars[i].Jobs = parsed
+                    for i, c in ipairs(chars) do
+                        if c.Jobs then
+                            local success, parsed = pcall(json.decode, c.Jobs)
+                            chars[i].Jobs = success and parsed or {}
                         else
                             chars[i].Jobs = {}
                         end
-                    else
-                        chars[i].Jobs = {}
                     end
-                end
 
-                local tData = {
-                    Source = target:GetData('Source'),
-                    Name = target:GetData('Name'),
-                    GameName = target:GetData('GameName'),
-                    AccountID = target:GetData('AccountID'),
-                    Identifier = target:GetData('Identifier'),
-                    Discord = target:GetData("Discord"),
-                    Mention = target:GetData("Mention"),
-                    Avatar = target:GetData("Avatar"),
-                    Level = target.Permissions:GetLevel(),
-                    Groups = target:GetData('Groups'),
-                    StaffGroup = staffGroupName,
-                    Character = char and {
-                        First = char:GetData('First'),
-                        Last = char:GetData('Last'),
-                        SID = char:GetData('SID'),
-                        DOB = char:GetData('DOB'),
-                        Phone = char:GetData('Phone'),
-                        Jobs = char:GetData('Jobs'),
-                        Coords = {
-                            x = coords.x,
-                            y = coords.y,
-                            z = coords.z
-                        }
-                    } or false,
-                    Characters = chars,
-                    Vehicle = inVehicle,
-                }
+                    local tData = {
+                        Source = target:GetData('Source'),
+                        Name = target:GetData('Name'),
+                        GameName = target:GetData('GameName'),
+                        AccountID = target:GetData('AccountID'),
+                        Identifier = target:GetData('Identifier'),
+                        Discord = target:GetData("Discord"),
+                        Mention = target:GetData("Mention"),
+                        Avatar = target:GetData("Avatar"),
+                        Level = target.Permissions:GetLevel(),
+                        Groups = target:GetData('Groups'),
+                        StaffGroup = staffGroupName,
+                        Character = char and {
+                            First = char:GetData('First'),
+                            Last = char:GetData('Last'),
+                            SID = char:GetData('SID'),
+                            DOB = char:GetData('DOB'),
+                            Phone = char:GetData('Phone'),
+                            Jobs = char:GetData('Jobs'),
+                            Coords = {
+                                x = coords.x,
+                                y = coords.y,
+                                z = coords.z
+                            }
+                        } or false,
+                        Characters = chars,
+                        Vehicle = inVehicle,
+                    }
 
-                cb(tData)
+                    cb(tData)
+                end)
             else
                 local rDs = exports['pulsar-core']:GetRecentDisconnects()
                 for k, v in ipairs(rDs) do

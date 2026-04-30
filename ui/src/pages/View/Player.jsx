@@ -153,7 +153,6 @@ export default ({ match }) => {
         // 	Reason: 'Exiting',
         // })
       } catch (err) {
-        console.log(err);
         toast.error("Unable to Load");
         setErr(true);
 

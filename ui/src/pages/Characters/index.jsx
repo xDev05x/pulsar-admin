@@ -63,7 +63,6 @@ export default (props) => {
                 term: searched,
                 page: p ?? 1,
             })).json();
-            console.log(res)
             if (res) {
                 setPlayers(res.players);
                 setPages(Math.ceil(res.pages / PER_PAGE));
