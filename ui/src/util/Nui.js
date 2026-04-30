@@ -1,3 +1,10 @@
+function getResourceName() {
+	if (typeof window !== 'undefined' && typeof window.GetParentResourceName === 'function') {
+		return window.GetParentResourceName();
+	}
+	return process.env.REACT_RESOURCE_NAME || 'pulsar-admin';
+}
+
 export default {
 	async send(event, data = {}) {
 		/// #if DEBUG
@@ -5,7 +12,7 @@ export default {
 		/// #endif
 
 		/* eslint-disable no-unreachable */
-		return fetch(`https://${process.env.REACT_RESOURCE_NAME}/${event}`, {
+		return fetch(`https://${getResourceName()}/${event}`, {
 			method: 'post',
 			headers: {
 				'Content-type': 'application/json; charset=UTF-8',

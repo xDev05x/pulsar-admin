@@ -24,6 +24,7 @@ module.exports = require('./webpack.common')({
 		}),
 		new webpack.EnvironmentPlugin({
 			NODE_ENV: 'development',
+			REACT_RESOURCE_NAME: 'pulsar-admin',
 		}),
 		new webpack.ProvidePlugin({
 			"React": "react",
