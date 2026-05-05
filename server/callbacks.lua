@@ -93,6 +93,30 @@ function RegisterCallbacks()
                         else
                             chars[i].Jobs = {}
                         end
+                        local aptId = tonumber(c.Apartment)
+                        if aptId and aptId > 0 then
+                            local aptData = GlobalState[string.format("Apartment:%s", aptId)]
+                            if aptData then
+                                chars[i].ApartmentRoom = string.format("Room %s — %s",
+                                    aptData.roomLabel,
+                                    aptData.buildingLabel or aptData.buildingName or "Unknown"
+                                )
+                            end
+                        end
+                    end
+
+                    local charAptRoom = nil
+                    if char then
+                        local charAptId = tonumber(char:GetData('Apartment'))
+                        if charAptId and charAptId > 0 then
+                            local charAptData = GlobalState[string.format("Apartment:%s", charAptId)]
+                            if charAptData then
+                                charAptRoom = string.format("Room %s — %s",
+                                    charAptData.roomLabel,
+                                    charAptData.buildingLabel or charAptData.buildingName or "Unknown"
+                                )
+                            end
+                        end
                     end
 
                     local tData = {
@@ -114,6 +138,7 @@ function RegisterCallbacks()
                             DOB = char:GetData('DOB'),
                             Phone = char:GetData('Phone'),
                             Jobs = char:GetData('Jobs'),
+                            ApartmentRoom = charAptRoom,
                             Coords = {
                                 x = coords.x,
                                 y = coords.y,
@@ -617,6 +642,85 @@ function RegisterCallbacks()
 
             TriggerClientEvent('Admin:Client:Invisible', source)
             cb(true)
+        else
+            cb(false)
+        end
+    end)
+
+    exports["pulsar-core"]:RegisterServerCallback('Admin:GetItemList', function(source, data, cb)
+        local player = exports['pulsar-core']:FetchSource(source)
+        if player and player.Permissions:IsAdmin() then
+            local rarityMap = { none = 0, common = 1, uncommon = 2, rare = 3, epic = 4, special = 5, legendary = 4 }
+            local oxItems = exports.ox_inventory:Items()
+            local result = {}
+            for name, item in pairs(oxItems) do
+                local rarity = item.rarity or 0
+                if type(rarity) == 'string' then
+                    rarity = rarityMap[rarity:lower()] or 0
+                end
+                table.insert(result, {
+                    name = item.name or name,
+                    label = item.label or name,
+                    type = item.type or 7,
+                    rarity = rarity,
+                    weight = item.weight or 0,
+                    price = item.price or 0,
+                    isStackable = item.isStackable or item.stack or false,
+                    isUsable = item.isUsable or item.usable or false,
+                })
+            end
+            cb(result)
+        else
+            cb(false)
+        end
+    end)
+
+    exports["pulsar-core"]:RegisterServerCallback('Admin:GiveItem', function(source, data, cb)
+        local player = exports['pulsar-core']:FetchSource(source)
+        if player and player.Permissions:IsAdmin() and data and data.itemName then
+            local targetSource = data.toSelf and source or tonumber(data.targetSource)
+
+            if not targetSource then
+                cb({ success = false, message = 'No target specified' })
+                return
+            end
+
+            local target = exports['pulsar-core']:FetchSource(targetSource)
+            if not target then
+                cb({ success = false, message = 'Player not online' })
+                return
+            end
+
+            local quantity = math.max(1, math.min(tonumber(data.quantity) or 1, 1000))
+            local success = exports.ox_inventory:AddItem(targetSource, data.itemName, quantity)
+
+            if success then
+                exports['pulsar-core']:LoggerWarn(
+                    "Admin",
+                    string.format(
+                        "%s [%s] Gave %s x%s to %s [%s]",
+                        player:GetData("Name"),
+                        player:GetData("AccountID"),
+                        data.itemName,
+                        quantity,
+                        target:GetData("Name"),
+                        target:GetData("AccountID")
+                    ),
+                    {
+                        console = true,
+                        file = false,
+                        database = true,
+                        discord = {
+                            embed = true,
+                            type = "error",
+                            webhook = GetConvar("discord_admin_webhook", ''),
+                        },
+                    }
+                )
+                cb({ success = true, message = string.format('Gave %s x%s', data.itemName, quantity) })
+            else
+                cb({ success = false, message = 'Failed to give item — player may not have inventory space' })
+            end
         else
             cb(false)
         end
